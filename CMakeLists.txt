@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.12)
 project(cs416_project CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} $ENV{HOME})
 cmake_policy(SET CMP0074 NEW)
+
+include_directories(SYSTEM "$ENV{HOME}/include")
 
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
@@ -30,23 +33,21 @@ else()
   message(STATUS "Could not find the CUDA compiler and toolkit. If you have CUDA-compatible GPU install the CUDA compiler/toolkit.")
 endif()
 
-find_package(CBLAS)
-if (NOT CBLAS_FOUND)
-    message(FATAL_ERROR "Could not find CBLAS library. Make sure you have completed the 'Getting Started' instructions on Canvas. Exiting.")
-endif()
+find_package(CBLAS REQUIRED)
 include_directories(${CBLAS_INCLUDE_DIRS})
 
-find_package(CUB)
-if (NOT CUB_FOUND)
-  message(FATAL_ERROR, "Could not CUB library. Make sure you have completed the 'Getting Started' instructions on Canvas. Exiting.")
-endif()
+find_package(CUB REQUIRED)
 include_directories(${CUB_INCLUDE_DIRS})
+
+# GMP Support
+# set(GMP_ROOT ${HOME})
+find_package(GMP REQUIRED)
+include_directories(${GMP_INCLUDE_DIR})
 
 # Add current directory to include search path (so tests can find headers)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-# Link threading library to all executables in this assignment (needed for C++ threads)
-link_libraries(Threads::Threads)  
+link_libraries(Threads::Threads ${GMPXX_LIBRARY} ${GMP_LIBRARY})
 
 add_executable(aks-serial 
   aks-serial.cc

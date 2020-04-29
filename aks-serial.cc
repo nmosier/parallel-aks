@@ -92,6 +92,8 @@ int main(int argc, char *argv[]) {
 
   std::clog << "l = " << l << std::endl;
 
+  
+
   indeterminate();
 
   return 0;

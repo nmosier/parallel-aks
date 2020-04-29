@@ -9,19 +9,21 @@ template <typename T>
 class polynomial {
 public:
   
-  int degree() const { return coeffs.size(); }
+  int degree() const { 
+    return std::max<size_t>(coeffs.size(), 1) - 1;
+  }
 
   polynomial<T> operator+(const polynomial& other) const {
     const auto maxdeg = std::max(degree(), other.degree());
     const auto mindeg = std::min(degree(), other.degree());
-    std::vector<T> result(maxdeg);
+    std::vector<T> result(maxdeg + 1);
     
-    for (int i = 0; i < mindeg; ++i) {
+    for (int i = 0; i <= mindeg; ++i) {
       result[i] = coeffs[i] + other.coeffs[i];
     }
 
     auto it = (degree() == maxdeg ? coeffs.begin() : other.coeffs.begin());
-    for (int i = mindeg; i < maxdeg; ++i) {
+    for (int i = mindeg + 1; i <= maxdeg; ++i) {
       result[i] = *it++;
     }
 
@@ -34,10 +36,10 @@ public:
   }
 
   polynomial<T> operator*(const polynomial& other) const {
-    std::vector<T> result(degree() + other.degree());
+    std::vector<T> result(degree() + other.degree() + 1);
     
-    for (int i = 0; i < degree(); ++i) {
-      for (int j = 0; j < other.degree(); ++j) {
+    for (int i = 0; i <= degree(); ++i) {
+      for (int j = 0; j <= other.degree(); ++j) {
 	result[i + j] += coeffs[i] * other.coeffs[j];
       }
     }
@@ -54,7 +56,7 @@ public:
   polynomial<T> operator-() const {
     std::vector<T> result(coeffs.size());
     std::transform(coeffs.begin(), coeffs.end(), result.begin(),
-		   std::minus<T>());
+		   [](const T& val) { return -val; });
     return polynomial<T>(result);
   }
 
@@ -80,20 +82,25 @@ public:
   }
 
   polynomial<T> operator%(const polynomial<T>& mod) const {
+    if (mod.degree() == 0) {
+      return polynomial<T>(std::vector<T> {0});
+    }
+
     assert(mod.degree() > 0); // don't divide by zero
 
-    const auto degdiff = std::max(0, degree() - mod.degree());
-    std::vector<T> result(degdiff + 1);
+    // const auto degdiff = std::max(0, degree() - mod.degree());
+    // std::vector<T> result(degdiff + 1);
     
     polynomial<T> acc(coeffs);
     while (acc.degree() >= mod.degree()) {
-      const auto power = acc.degree() - mod.degree();
+      // const auto power = acc.degree() - mod.degree();
       const auto coeff = acc.coeffs.back() / mod.coeffs.back();
-      result[power] = coeff;
+      // result[power] = coeff;
       acc -= mod * coeff;
     }
     
-    return polynomial<T>(result);
+    // return polynomial<T>(result);
+    return acc;
   }
 
   template <typename U>

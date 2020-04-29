@@ -72,3 +72,7 @@ add_executable(totient
   totient.cc
   aks-util.cc
 )
+
+add_executable(polynomial
+  polynomial.cc
+)

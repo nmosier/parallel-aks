@@ -4,14 +4,11 @@
 #include "polynomial.hpp"
 
 int main(int argc, char *argv[]) {
-  std::vector<int> coeffs {1, 2, 3};
-  polynomial<mpz_class> test(coeffs.begin(), coeffs.end());
-  std::vector<int> coeffs_ {-1,-2,-3};
-  polynomial<mpz_class> test2(coeffs_.begin(), coeffs_.end());
+  polynomial<mpz_class> poly1;
+  polynomial<mpz_class> poly2;
   
-  std::cout << "+: " << test + test2 << std::endl;
-  std::cout << "*: " << test * test2 << std::endl;
-  std::cout << "%: " << test % test2 << std::endl;
+  std::cin >> poly1;
+  std::cout << poly1 << std::endl;
   
   return 0;
 }

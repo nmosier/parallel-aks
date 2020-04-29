@@ -108,10 +108,16 @@ public:
   polynomial() {}
   
   template <typename... Args>
-  polynomial(Args... args): coeffs(args...) {}
+  polynomial(Args... args): coeffs(args...) {
+    while (!coeffs.empty() && !coeffs.back()) { coeffs.pop_back(); }
+  }
+
   
   template <typename U>
   friend std::ostream& operator<<(std::ostream& os, const polynomial<U>& poly);
+
+  template <typename U>
+  friend std::istream& operator>>(std::istream& is, polynomial<U>& poly);
   
 private:
   std::vector<T> coeffs; // coefficients
@@ -134,4 +140,55 @@ std::ostream& operator<<(std::ostream& os, const polynomial<T>& poly) {
   }
   
   return os;
+}
+
+template <typename T>
+std::istream& operator>>(std::istream& is, polynomial<T>& poly) {
+  std::vector<T> vec;
+  T coeff;
+  
+  while (is) {
+    // skip whitespace
+    while (isspace(is.peek())) { is.get(); }
+    
+    if (is.peek() != 'x') {
+      is >> coeff;
+    } else {
+      coeff = 1;
+    }
+
+    int c = is.peek();
+    size_t pow = 0;
+
+    if (c == 'x') {
+      is.get(); // discard 'x'
+      if (is.peek() == '^') {
+	is.get(); // discard '^'
+	is >> pow;
+      } else {
+	pow = 1;
+      }
+      c = is.peek();
+    }
+
+    if (vec.size() < pow + 1) {
+      vec.resize(pow + 1);
+    }
+
+    vec[pow] += coeff;
+
+    switch (c) {
+    case '+':
+      is.get();
+      break;
+    case '-':
+      break;
+    default:
+      goto done;
+    }
+  }
+
+ done:
+  poly = polynomial<T>(vec);
+  return is;
 }

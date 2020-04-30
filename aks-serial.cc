@@ -5,6 +5,7 @@
 #include <mpfr.h>
 
 #include "aks-util.hpp"
+#include "aks-bit.hpp"
 
 inline void prime() { 
   std::cout << "prime" << std::endl; 
@@ -91,8 +92,6 @@ int main(int argc, char *argv[]) {
   mpfr_get_z(l.get_mpz_t(), l_f, MPFR_RNDD);
 
   std::clog << "l = " << l << std::endl;
-
-  
 
   indeterminate();
 

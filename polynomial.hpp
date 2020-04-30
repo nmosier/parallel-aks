@@ -1,9 +1,12 @@
 #pragma once
 
 #include <ostream>
+#include <istream>
 #include <vector>
 #include <cassert>
 #include <algorithm>
+
+#include "polynomial.hpp"
 
 template <typename T>
 class polynomial {

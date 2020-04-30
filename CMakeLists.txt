@@ -76,3 +76,7 @@ add_executable(totient
 add_executable(polynomial
   polynomial.cc
 )
+
+add_executable(bit_container
+  bit_container.cc
+)

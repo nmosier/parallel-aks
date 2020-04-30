@@ -1,6 +1,8 @@
 #include <limits>
 #include <gmpxx.h>
 #include <gmp.h>
+#include "polynomial.hpp"
+#include "bit-iterator.hpp"
 
 #if 0
 inline mp_bitcnt_t mpz_bits(const mpz_class op) { return op.get_mpz_t(); }
@@ -53,3 +55,8 @@ mpz_class mpz_totient(const mpz_class n) {
   }
   return phi;
 }
+
+// polynomial ring exponentiation
+polynomial<mpz_class> pow_polyring(const polynomial<mpz_class>& poly, mpz_class pow, const polynomial<mpz_class>& polymod, mpz_class zmod);
+
+

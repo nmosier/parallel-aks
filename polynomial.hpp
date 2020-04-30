@@ -67,10 +67,14 @@ public:
   polynomial<T>& operator-=(const polynomial<T>& other) {
     const auto degmin = std::min(degree(), other.degree());
     if (degree() < other.degree()) {
-      coeffs.resize(other.degree());
-      std::copy(other.coeffs.begin() + degmin, other.coeffs.end(), coeffs.begin() + degmin);
+      coeffs.resize(other.degree() + 1);
+      std::transform(other.coeffs.begin() + degmin + 1, other.coeffs.end(), 
+		     coeffs.begin() + degmin + 1,
+		     [](const T& coeff) {
+		       return -coeff;
+		     });
     }
-    for (int i = 0; i < degmin; ++i) {
+    for (int i = 0; i <= degmin; ++i) {
       coeffs[i] -= other.coeffs[i];
     }
     
@@ -81,25 +85,28 @@ public:
     return *this;
   }
 
+  template <typename U>
+  static polynomial<T> power(U deg) {
+    // polynomial<T> poly;
+    // poly.coeffs.resize(p);
+    std::vector<T> vec(deg + 1);
+    vec[deg] = 1;
+    return polynomial<T>(vec);
+  }
+
   polynomial<T> operator%(const polynomial<T>& mod) const {
+
     if (mod.degree() == 0) {
       return polynomial<T>(std::vector<T> {0});
     }
 
-    assert(mod.degree() > 0); // don't divide by zero
-
-    // const auto degdiff = std::max(0, degree() - mod.degree());
-    // std::vector<T> result(degdiff + 1);
-    
     polynomial<T> acc(coeffs);
     while (acc.degree() >= mod.degree()) {
-      // const auto power = acc.degree() - mod.degree();
+      const auto power = polynomial<T>::power(acc.degree() - mod.degree());
       const auto coeff = acc.coeffs.back() / mod.coeffs.back();
-      // result[power] = coeff;
-      acc -= mod * coeff;
+      acc -= mod * power * coeff;
     }
     
-    // return polynomial<T>(result);
     return acc;
   }
 

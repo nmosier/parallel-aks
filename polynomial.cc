@@ -24,7 +24,5 @@ int main(int argc, char *argv[]) {
     }
   }
   
-  std::cout << poly1 << std::endl;
-  
   return 0;
 }

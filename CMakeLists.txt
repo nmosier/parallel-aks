@@ -80,3 +80,7 @@ add_executable(polynomial
 add_executable(bit_container
   bit_container.cc
 )
+
+add_executable(modular
+  modular.cc
+)

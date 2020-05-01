@@ -3,13 +3,13 @@
 #include <gmpxx.h>
 #include <cassert>
 #include "polynomial.hpp"
+#include "modular.hpp"
 #include "aks-bit.hpp"
 
 int main(int argc, char *argv[]) {
-  polynomial<mpz_class> poly1;
-  polynomial<mpz_class> poly2;
+  polynomial<modular<mpz_class>> poly1, poly2, poly3;
   
-  std::cin >> poly1 >> poly2;
+  std::cin >> poly1 >> poly2 >> poly3;
 
   while (std::cin) {
     std::string op;

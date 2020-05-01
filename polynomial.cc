@@ -1,7 +1,9 @@
 #include <iostream>
 #include <gmp.h>
 #include <gmpxx.h>
+#include <cassert>
 #include "polynomial.hpp"
+#include "aks-bit.hpp"
 
 int main(int argc, char *argv[]) {
   polynomial<mpz_class> poly1;
@@ -21,6 +23,9 @@ int main(int argc, char *argv[]) {
       std::cout << poly1 * poly2 << std::endl;
     } else if (op == "mod") {
       std::cout << poly1 % poly2 << std::endl;
+    } else if (op == "pow") {
+      assert(poly2.degree() == 0);
+      std::cout << poly1.pow(poly2[0]) << std::endl;
     }
   }
   

@@ -6,7 +6,7 @@
 #include <cassert>
 #include <algorithm>
 
-#include "polynomial.hpp"
+#include "bit-iterator.hpp"
 
 template <typename T>
 class polynomial {
@@ -15,6 +15,9 @@ public:
   int degree() const { 
     return std::max<size_t>(coeffs.size(), 1) - 1;
   }
+
+  template <typename U>
+  inline const T& operator[](U index) const { return coeffs[index]; }
 
   polynomial<T> operator+(const polynomial& other) const {
     const auto maxdeg = std::max(degree(), other.degree());
@@ -38,8 +41,16 @@ public:
     return polynomial<T>(result);
   }
 
+  inline operator bool() const {
+    return coeffs.size();
+  }
+
   polynomial<T> operator*(const polynomial& other) const {
     std::vector<T> result(degree() + other.degree() + 1);
+    
+    if (!*this || !other) {
+      return polynomial<T>();
+    }
     
     for (int i = 0; i <= degree(); ++i) {
       for (int j = 0; j <= other.degree(); ++j) {
@@ -67,6 +78,24 @@ public:
     return *this + (-other);
   }
 
+  polynomial<T>& operator+=(const polynomial<T>& other) {
+    const auto degmin = std::min(degree(), other.degree());
+    if (degree() < other.degree()) {
+      coeffs.resize(other.degree() + 1);
+      std::copy(other.coeffs.begin() + degmin + 1, other.coeffs.end(), 
+		coeffs.begin() + degmin + 1);
+    }
+    for (int i = 0; i <= degmin; ++i) {
+      coeffs[i] += other.coeffs[i];
+    }
+    
+    while (!coeffs.empty() && !coeffs.back()) {
+      coeffs.pop_back();
+    }
+    
+    return *this;
+  }
+
   polynomial<T>& operator-=(const polynomial<T>& other) {
     const auto degmin = std::min(degree(), other.degree());
     if (degree() < other.degree()) {
@@ -86,6 +115,10 @@ public:
     }
 
     return *this;
+  }
+
+  inline polynomial<T>& operator*=(const polynomial<T>& other) {
+    return *this = *this * other;
   }
 
   template <typename U>
@@ -135,6 +168,27 @@ public:
 
   template <typename U>
   friend std::istream& operator>>(std::istream& is, polynomial<U>& poly);
+
+  template <typename Power, typename Func>
+  polynomial<T> pow_reduce(Power power, Func reduce) const {
+    polynomial<T> acc(std::vector<T>(1, 1));
+    bit_container<Power> power_bits(power);
+    auto power_bits_it = power_bits.end();
+    while (power_bits_it-- != power_bits.begin()) {
+      acc = acc * acc;
+      if (*power_bits_it) {
+	acc *= *this;
+      }
+      acc = reduce(acc);
+    }
+
+    return acc;
+  }
+
+  template <typename Power>
+  inline polynomial<T> pow(Power power) const {
+    return pow_reduce(power, [](auto& v){ return v; });
+  }
   
 private:
   std::vector<T> coeffs; // coefficients

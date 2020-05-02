@@ -93,6 +93,12 @@ int main(int argc, char *argv[]) {
 
   std::clog << "l = " << l << std::endl;
 
+  for (mpz_class a = 0; a <= l; ++a) {
+    // compute (X+a)^n and X^n+a 
+    // polynomial<mpz_class> lhs(std::vector<mpz_class> {a, 1});
+    // polynomial<mpz_class> rhs(std::vector<mpz_class> {
+  }
+
   indeterminate();
 
   return 0;

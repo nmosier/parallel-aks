@@ -2,6 +2,7 @@
 #include <gmp.h>
 
 #include "polynomial.hpp"
+#include "aks-bit.hpp"
 
 #pragma once
 
@@ -14,4 +15,8 @@ inline size_t mpz_log2_ceil(const mpz_class val) {
 
 mpz_class mpz_totient(const mpz_class n);
 
-polynomial<mpz_class> pow_polyring(const polynomial<mpz_class>& poly, mpz_class pow, const polynomial<mpz_class>& polymod, mpz_class zmod);
+//template <typename T>
+//mpz_class operator<<(T val, const mpz_class& shift);
+
+polynomial<mpz_class> pow_polyring(const polynomial<mpz_class>& poly, const mpz_class& pow,
+				   const polynomial<mpz_class>& polymod, const mpz_class& zmod);

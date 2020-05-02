@@ -189,6 +189,13 @@ public:
   inline polynomial<T> pow(Power power) const {
     return pow_reduce(power, [](auto& v){ return v; });
   }
+
+  typedef typename std::vector<T>::iterator iterator;
+  typedef typename std::vector<T>::const_iterator const_iterator;
+  iterator begin() { return coeffs.begin(); }
+  const_iterator begin() const { return coeffs.begin(); }
+  iterator end() { return coeffs.end(); }
+  const_iterator end() const { return coeffs.end(); }
   
 private:
   std::vector<T> coeffs; // coefficients

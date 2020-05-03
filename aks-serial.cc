@@ -135,7 +135,8 @@ int main(int argc, char *argv[]) {
   /* Let l = floor(sqrt(phi(r)) log(n)) */
     {
       timer t("compute l (totient)");
-      phi_n = mpz_totient(r);
+      // phi_n = mpz_totient(r);
+      phi_n = totient(r);
     }
     
   mpfr_init_set_z(phi_n_f, phi_n.get_mpz_t(), MPFR_RNDN);

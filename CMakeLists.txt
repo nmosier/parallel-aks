@@ -61,6 +61,7 @@ link_libraries(Threads::Threads ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
 add_executable(aks-serial 
   aks-serial.cc
   aks-util.cc
+  util.cc
 )
 
 add_executable(aks-test

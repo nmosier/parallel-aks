@@ -18,11 +18,49 @@ class polynomial {
 public:
   typedef std::map<U,T> Coeffs;
   
+  // mutable coeffs 
+  class Coeff {
+  public:
+    inline Coeff& operator=(const T& newval) {
+      if (newval == ring::zero<T>) {
+	container.erase(power);
+      } else {
+	container[power] = newval;
+      }
+      return *this;
+    }
+
+    inline operator T() const {
+      const auto it = container.find(power);
+      return it == container.end() ? ring::zero<T> : it->second;
+    }
+    
+    friend polynomial<T,U>;
+
+  private:
+    U power;
+    Coeffs& container;
+
+    Coeff(const U& power, Coeffs& container): power(power), container(container) {}
+  };
+  
   U degree() const {
     return coeffs.empty() ? ring::zero<U> : coeffs.rbegin()->first; 
   }
   
-  inline T& operator[](const U& index) { return coeffs[index]; }
+  inline Coeff operator[](const U& index) {
+    return Coeff(index, coeffs);
+  }
+
+  inline const T& at(const U& index) const { return coeffs.at(index); }
+
+  inline bool operator==(const polynomial<T,U>& other) const {
+    return coeffs == other.coeffs;
+  }
+
+  inline bool operator!=(const polynomial<T,U>& other) const {
+    return !(coeffs == other.coeffs);
+  }
 
   inline polynomial<T,U> operator+(const polynomial<T,U>& other) const {
     return polynomial<T,U>(coeffs) += other;
@@ -79,6 +117,8 @@ public:
   }
 
   polynomial<T,U> operator%(const polynomial<T,U>& mod) const {
+    if (can_mod_fast(mod)) { return mod_fast(mod); }
+
     polynomial<T,U> acc(coeffs);
     while (acc.degree() >= mod.degree()) {
       const auto power = polynomial<T,U>::power(acc.degree() - mod.degree());
@@ -89,6 +129,7 @@ public:
   }
 
   inline polynomial<T,U>& operator%=(const polynomial<T,U>& mod) {
+    if (can_mod_fast(mod)) { return mod_fast_inplace(mod); }
     return *this = *this % mod;
   }
 
@@ -115,10 +156,10 @@ public:
   template <typename A, typename B>
   friend std::istream& operator>>(std::istream& is, polynomial<A,B>& poly);
 
-  template <typename Power, typename Func>
-  polynomial<T,U> pow_reduce(Power power, Func reduce) const {
+  template <typename Func>
+  polynomial<T,U> pow_reduce(U power, Func reduce) const {
     polynomial<T,U> acc = ring::unity<polynomial<T,U>>;
-    bit_container<Power> power_bits(power);
+    bit_container<U> power_bits(power);
     auto power_bits_it = power_bits.end();
     while (power_bits_it-- != power_bits.begin()) {
       acc = acc * acc;
@@ -128,7 +169,7 @@ public:
       acc = reduce(acc);
     }
 
-    return acc;
+    return acc.trim();
   }
 
   template <typename Power>
@@ -155,6 +196,30 @@ private:
       }
     }
     return *this;
+  }
+  
+  inline bool can_mod_fast(const polynomial<T,U>& mod) const { 
+    return mod == ring::unity<polynomial<T,U>> || 
+      (mod.coeffs.size() == 2 && 
+       mod.coeffs.rbegin()->second == ring::unity<T> && 
+       mod.coeffs.begin()->second == -ring::unity<T>);
+  }
+
+  // works if modulus is X^n - 1 
+  polynomial<T,U>& mod_fast_inplace(const polynomial<T,U>& mod) { 
+    U n = mod.coeffs.rbegin()->first;
+    auto it = coeffs.rbegin();
+    while (!coeffs.empty() && it->first >= n) {
+      coeffs[it->first % n] += it->second;
+      coeffs.erase(it->first);
+      it = coeffs.rbegin();
+    }
+    return *this;
+  }
+
+  inline polynomial<T,U> mod_fast(const polynomial<T,U>& mod) const {
+    polynomial<T,U> result = *this;
+    return result.mod_fast_inplace(mod);
   }
 };
 

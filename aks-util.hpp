@@ -18,5 +18,7 @@ mpz_class mpz_totient(const mpz_class n);
 //template <typename T>
 //mpz_class operator<<(T val, const mpz_class& shift);
 
-polynomial<mpz_class> pow_polyring(const polynomial<mpz_class>& poly, const mpz_class& pow,
-				   const polynomial<mpz_class>& polymod, const mpz_class& zmod);
+polynomial<mpz_class,mpz_class> pow_polyring(const polynomial<mpz_class,mpz_class>& poly, 
+					     const mpz_class& pow,
+					     const polynomial<mpz_class,mpz_class>& polymod, 
+					     const mpz_class& zmod);

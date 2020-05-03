@@ -2,176 +2,122 @@
 
 #include <ostream>
 #include <istream>
-#include <vector>
+#include <map>
 #include <cassert>
 #include <algorithm>
 
+#include "ring.hpp"
 #include "bit-iterator.hpp"
 
-template <typename T>
+/*
+ * @tparam T type of coefficients
+ * @tparam U type of powers
+ */
+template <typename T, typename U>
 class polynomial {
 public:
+  typedef std::map<U,T> Coeffs;
   
-  int degree() const { 
-    return std::max<size_t>(coeffs.size(), 1) - 1;
+  U degree() const {
+    return coeffs.empty() ? ring::zero<U> : coeffs.rbegin()->first; 
+  }
+  
+  inline T& operator[](const U& index) { return coeffs[index]; }
+
+  inline polynomial<T,U> operator+(const polynomial<T,U>& other) const {
+    return polynomial<T,U>(coeffs) += other;
   }
 
-  template <typename U>
-  inline const T& operator[](U index) const { return coeffs[index]; }
-
-  polynomial<T> operator+(const polynomial& other) const {
-    const auto maxdeg = std::max(degree(), other.degree());
-    const auto mindeg = std::min(degree(), other.degree());
-    std::vector<T> result(maxdeg + 1);
-    
-    for (int i = 0; i <= mindeg; ++i) {
-      result[i] = coeffs[i] + other.coeffs[i];
+  polynomial<T,U>& operator+=(const polynomial<T,U>& other) {
+    for (const std::pair<U,T> pair : other) {
+      coeffs[pair.first] += pair.second;
     }
-
-    auto it = (degree() == maxdeg ? coeffs.begin() : other.coeffs.begin());
-    for (int i = mindeg + 1; i <= maxdeg; ++i) {
-      result[i] = *it++;
-    }
-
-    T zero;
-    while (!result.empty() && result.back() == zero) {
-      result.pop_back();
-    }
-
-    return polynomial<T>(result);
+    return trim();
   }
 
   inline operator bool() const {
-    return coeffs.size();
+    return coeffs.empty();
   }
 
-  polynomial<T> operator*(const polynomial& other) const {
-    std::vector<T> result(degree() + other.degree() + 1);
+  polynomial<T,U> operator*(const polynomial<T,U>& other) const {
+    polynomial<T,U> result;
     
-    if (!*this || !other) {
-      return polynomial<T>();
-    }
-    
-    for (int i = 0; i <= degree(); ++i) {
-      for (int j = 0; j <= other.degree(); ++j) {
-	result[i + j] += coeffs[i] * other.coeffs[j];
+    for (const std::pair<U,T> i : coeffs) {
+      for (const std::pair<U,T> j : other.coeffs) {
+	result.coeffs[i.first + j.first] += i.second * j.second;
       }
     }
-
-    /* trim */
-    T zero;
-    while (!result.empty() && result.back() == zero) {
-      result.pop_back();
-    }
-
-    return polynomial<T>(result);
+    
+    return result.trim();
   }
 
-  polynomial<T> operator-() const {
-    std::vector<T> result(coeffs.size());
-    std::transform(coeffs.begin(), coeffs.end(), result.begin(),
-		   [](const T& val) { return -val; });
-    return polynomial<T>(result);
+  inline polynomial<T,U> operator-() const {
+    Coeffs result;
+    std::transform(coeffs.begin(), coeffs.end(), std::inserter(result, result.end()),
+		   [](const auto pair) { return std::make_pair(pair.first, -pair.second); });
+    return polynomial<T,U>(result);
   }
 
-  polynomial<T> operator-(const polynomial<T>& other) const { 
+  polynomial<T,U> operator-(const polynomial<T,U>& other) const { 
     return *this + (-other);
   }
 
-  polynomial<T>& operator+=(const polynomial<T>& other) {
-    const auto degmin = std::min(degree(), other.degree());
-    if (degree() < other.degree()) {
-      coeffs.resize(other.degree() + 1);
-      std::copy(other.coeffs.begin() + degmin + 1, other.coeffs.end(), 
-		coeffs.begin() + degmin + 1);
+  polynomial<T,U>& operator-=(const polynomial<T,U>& other) {
+    for (const std::pair<U,T> pair : other) {
+      coeffs[pair.first] -= pair.second;
     }
-    for (int i = 0; i <= degmin; ++i) {
-      coeffs[i] += other.coeffs[i];
-    }
-    
-    while (!coeffs.empty() && !coeffs.back()) {
-      coeffs.pop_back();
-    }
-    
-    return *this;
+    return trim();
   }
-
-  polynomial<T>& operator-=(const polynomial<T>& other) {
-    const auto degmin = std::min(degree(), other.degree());
-    if (degree() < other.degree()) {
-      coeffs.resize(other.degree() + 1);
-      std::transform(other.coeffs.begin() + degmin + 1, other.coeffs.end(), 
-		     coeffs.begin() + degmin + 1,
-		     [](const T& coeff) {
-		       return -coeff;
-		     });
-    }
-    for (int i = 0; i <= degmin; ++i) {
-      coeffs[i] -= other.coeffs[i];
-    }
-    
-    while (!coeffs.empty() && !coeffs.back()) {
-      coeffs.pop_back();
-    }
-
-    return *this;
-  }
-
-  inline polynomial<T>& operator*=(const polynomial<T>& other) {
+  
+  inline polynomial<T,U>& operator*=(const polynomial<T,U>& other) {
     return *this = *this * other;
   }
-
-  template <typename U>
-  static polynomial<T> power(U deg) {
-    // polynomial<T> poly;
-    // poly.coeffs.resize(p);
-    std::vector<T> vec(deg + 1);
-    vec[deg] = 1;
-    return polynomial<T>(vec);
+  
+  // x^n
+  static inline polynomial<T,U> power(const U& n) {
+    return polynomial<T,U>(Coeffs {{n, ring::unity<T>}});
   }
 
-  polynomial<T> operator%(const polynomial<T>& mod) const {
-
-    if (mod.degree() == 0) {
-      return polynomial<T>(std::vector<T> {0});
-    }
-
-    polynomial<T> acc(coeffs);
+  polynomial<T,U> operator%(const polynomial<T,U>& mod) const {
+    polynomial<T,U> acc(coeffs);
     while (acc.degree() >= mod.degree()) {
-      const auto power = polynomial<T>::power(acc.degree() - mod.degree());
-      const auto coeff = acc.coeffs.back() / mod.coeffs.back();
+      const auto power = polynomial<T,U>::power(acc.degree() - mod.degree());
+      const auto coeff = acc.coeffs.rbegin()->second / mod.coeffs.rbegin()->second;
       acc -= mod * power * coeff;
     }
-    
     return acc;
   }
 
-  template <typename U>
-  polynomial<T> operator*(U n) const {
-    std::vector<T> result(coeffs.size());
-    std::transform(coeffs.begin(), coeffs.end(), result.begin(), [=](const auto coeff) {
-	return coeff * n;
-      });
-    return polynomial<T>(result);
+  inline polynomial<T,U>& operator%=(const polynomial<T,U>& mod) {
+    return *this = *this % mod;
+  }
+
+  template <typename V>
+  inline polynomial<T,U> operator*(const V& n) const {
+    Coeffs result;
+    std::transform(coeffs.begin(), coeffs.end(), std::inserter(result, result.end()),
+		   [&](const auto pair) { 
+		     return std::make_pair(pair.first, pair.second * n); 
+		   });
+    return polynomial<T,U>(result);
   }
 
   polynomial() {}
   
   template <typename... Args>
   polynomial(Args... args): coeffs(args...) {
-    while (!coeffs.empty() && !coeffs.back()) { coeffs.pop_back(); }
+    trim();
   }
-
   
-  template <typename U>
-  friend std::ostream& operator<<(std::ostream& os, const polynomial<U>& poly);
+  template <typename A, typename B>
+  friend std::ostream& operator<<(std::ostream& os, const polynomial<A,B>& poly);
 
-  template <typename U>
-  friend std::istream& operator>>(std::istream& is, polynomial<U>& poly);
+  template <typename A, typename B>
+  friend std::istream& operator>>(std::istream& is, polynomial<A,B>& poly);
 
   template <typename Power, typename Func>
-  polynomial<T> pow_reduce(Power power, Func reduce) const {
-    polynomial<T> acc(std::vector<T>(1, 1));
+  polynomial<T,U> pow_reduce(Power power, Func reduce) const {
+    polynomial<T,U> acc = ring::unity<polynomial<T,U>>;
     bit_container<Power> power_bits(power);
     auto power_bits_it = power_bits.end();
     while (power_bits_it-- != power_bits.begin()) {
@@ -186,43 +132,50 @@ public:
   }
 
   template <typename Power>
-  inline polynomial<T> pow(Power power) const {
+  inline polynomial<T,U> pow(Power power) const {
     return pow_reduce(power, [](auto& v){ return v; });
   }
 
-  typedef typename std::vector<T>::iterator iterator;
-  typedef typename std::vector<T>::const_iterator const_iterator;
+  typedef typename Coeffs::iterator iterator;
+  typedef typename Coeffs::const_iterator const_iterator;
   iterator begin() { return coeffs.begin(); }
   const_iterator begin() const { return coeffs.begin(); }
   iterator end() { return coeffs.end(); }
   const_iterator end() const { return coeffs.end(); }
   
 private:
-  std::vector<T> coeffs; // coefficients
-};
+  Coeffs coeffs; // coefficients
 
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const polynomial<T>& poly) {
-  if (poly.coeffs.empty()) {
-    T zero;
-    os << zero;
-  } else {
-    for (size_t i = 0; i < poly.coeffs.size(); ++i) {
-      if (poly.coeffs[i]) {
-	os << poly.coeffs[i] << "x^" << i;
-	if (i != poly.coeffs.size() - 1) {
-	  os << " + ";
-	}
+  polynomial<T,U>& trim() {
+    for (auto it = coeffs.begin(); it != coeffs.end(); ) {
+      if (it->second) {
+	++it; // skip
+      } else {
+	it = coeffs.erase(it);
       }
     }
+    return *this;
   }
-  
+};
+
+template <typename T, typename U>
+std::ostream& operator<<(std::ostream& os, const polynomial<T,U>& poly) {
+  if (poly.coeffs.empty()) {
+    os << ring::zero<polynomial<T,U>>;
+  } else {
+    for (auto it = poly.coeffs.begin(); it != poly.coeffs.end(); ++it) {
+      if (it != poly.coeffs.begin()) {
+	os << " + ";
+      }
+      os << it->second << "x^" << it->first;
+    }
+  }
   return os;
 }
 
-template <typename T>
-std::istream& operator>>(std::istream& is, polynomial<T>& poly) {
-  std::vector<T> vec;
+template <typename T, typename U>
+std::istream& operator>>(std::istream& is, polynomial<T,U>& poly) {
+  typename polynomial<T,U>::Coeffs coeffs;
   T coeff;
   
   while (is) {
@@ -236,7 +189,7 @@ std::istream& operator>>(std::istream& is, polynomial<T>& poly) {
     }
 
     int c = is.peek();
-    size_t pow = 0;
+    U pow = ring::zero<U>;
 
     if (c == 'x') {
       is.get(); // discard 'x'
@@ -244,16 +197,12 @@ std::istream& operator>>(std::istream& is, polynomial<T>& poly) {
 	is.get(); // discard '^'
 	is >> pow;
       } else {
-	pow = 1;
+	pow = ring::unity<U>;
       }
       c = is.peek();
     }
 
-    if (vec.size() < pow + 1) {
-      vec.resize(pow + 1);
-    }
-
-    vec[pow] += coeff;
+    coeffs[pow] += coeff;
 
     switch (c) {
     case '+':
@@ -267,6 +216,15 @@ std::istream& operator>>(std::istream& is, polynomial<T>& poly) {
   }
 
  done:
-  poly = polynomial<T>(vec);
+  poly = polynomial<T,U>(coeffs);
   return is;
+}
+
+
+namespace ring {
+  template <typename T, typename U>
+  const polynomial<T,U> unity<polynomial<T,U>>(typename polynomial<T,U>::Coeffs {{ring::zero<U>, ring::unity<T>}});
+  
+  template <typename T, typename U>
+  const polynomial<T,U> zero<polynomial<T,U>>;
 }

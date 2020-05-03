@@ -58,18 +58,22 @@ mpz_class mpz_totient(const mpz_class n) {
 }
 
 // polynomial ring exponentiation
-polynomial<mpz_class> pow_polyring(const polynomial<mpz_class>& poly, const mpz_class& pow,
-				   const polynomial<mpz_class>& polymod, const mpz_class& zmod) {
-  return poly.pow_reduce(pow, [=](const polynomial<mpz_class>& acc) -> polynomial<mpz_class> {
-      polynomial<mpz_class> newacc = acc % polymod;
-      for (auto& coeff : newacc) {
-	if (coeff < 0) {
-	  coeff += ((-coeff + zmod - 1) / zmod) * zmod; // make positive
-	}
-	coeff %= zmod;
-      }
-      return newacc;
-    });
-  
+polynomial<mpz_class,mpz_class> pow_polyring(const polynomial<mpz_class,mpz_class>& poly, 
+					     const mpz_class& pow,
+					     const polynomial<mpz_class,mpz_class>& polymod, 
+					     const mpz_class& zmod) {
+  return poly.pow_reduce(pow, 
+			 [=](const polynomial<mpz_class,mpz_class>& acc) 
+			 -> polynomial<mpz_class,mpz_class> {
+			   polynomial<mpz_class,mpz_class> newacc = acc % polymod;
+			   for (auto& coeff : newacc) {
+			     if (coeff.second < 0) {
+			       // make positive
+			       coeff.second += ((-coeff.second + zmod - 1) / zmod) * zmod;
+			     }
+			     coeff.second %= zmod;
+			   }
+			   return newacc;
+			 });
 }
 

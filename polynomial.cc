@@ -7,9 +7,9 @@
 #include "aks-bit.hpp"
 
 int main(int argc, char *argv[]) {
-  polynomial<mpz_class> poly1, poly2, poly3;
+  polynomial<mpz_class,mpz_class> poly1, poly2;
   
-  std::cin >> poly1 >> poly2 >> poly3;
+  std::cin >> poly1 >> poly2;
 
   while (std::cin) {
     std::string op;

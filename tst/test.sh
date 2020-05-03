@@ -6,6 +6,26 @@ usage: $0 <command> <list-of-primes>
 EOF
 }
 
+THREADS=1
+
+while getopts "j:h" OPTION; do
+    case $OPTION in
+	j)
+	    THREADS="$OPTARG"
+	    ;;
+	h)
+	    usage
+	    exit 0
+	    ;;
+	"?")
+	    usage
+	    exit 1
+	    ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
 if [[ $# -ne 2 ]]; then
     usage
     exit 1

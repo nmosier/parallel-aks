@@ -1,3 +1,4 @@
+#include <map>
 #include <gmpxx.h>
 #include <gmp.h>
 
@@ -22,3 +23,35 @@ polynomial<mpz_class,mpz_class> pow_polyring(const polynomial<mpz_class,mpz_clas
 					     const mpz_class& pow,
 					     const polynomial<mpz_class,mpz_class>& polymod, 
 					     const mpz_class& zmod);
+
+template <typename T>
+std::map<T,int> factorize(T n) {
+  std::map<T,int> factors;
+
+  T i = 2;
+
+  while (i <= n) {
+    if (n % i == ring::zero<T>) {
+      ++factors[i];
+      n /= i;
+    } else {
+      ++i;
+    }
+  }
+
+  return factors;
+}
+
+template <typename T>
+T totient(const T& n) {
+  const auto factors = factorize(n);
+  T acc = ring::unity<T>;
+  
+  for (const auto factor : factors) {
+    for (int i = 0; i < factor.second - 1; ++i) {
+      acc *= factor.first;
+    }
+    acc *= factor.first - 1;
+  }
+  return acc;
+}

@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     n = mpz_class(argv[1]);
   }
 
-  std::cout << mpz_totient(n) << std::endl;
+  std::cout << totient(n) << std::endl;
 
   return 0;
 }

@@ -1,36 +1,10 @@
 #include <limits>
+#include <unordered_map>
 #include <gmpxx.h>
 #include <gmp.h>
 #include "polynomial.hpp"
 #include "bit-iterator.hpp"
 #include "aks-bit.hpp"
-
-#if 0
-inline mp_bitcnt_t mpz_bits(const mpz_class op) { return op.get_mpz_t(); }
-mp_bitcnt_t mpz_bits(const mpz_t op) {
-  /* binary expansion */
-  //  mp_bitcnt_t last = 0;
-  mp_bitcnt_t upper = 0;
-  while (mpz_scan1(op, upper) < std::numeric_limits<mp_bitcnt_t>::max()) {
-    current = current * 2 + 1;
-  }
-  mp_bitcnt_t lower = (upper - 1) / 2;
-  
-  /* binary search */
-  while (upper > lower + 1) {
-    mp_bitcnt_t middle = (upper + lower) / 2;
-    if (mpz_scan1(op, middle) < std::numeric_limits<mp_bitcnt_t>::max()) {
-      lower = middle;
-    } else {
-      upper = middle;
-    }
-  }
-  
-
-
-  return upper;
-}
-#endif
 
 // check whether order is greater than _thresh_
 bool mpz_ord_gt(const mpz_class val, const mpz_class mod, const uintmax_t thresh) {
@@ -56,6 +30,17 @@ mpz_class mpz_totient(const mpz_class n) {
   }
   return phi;
 }
+
+
+
+template <typename T>
+uintmax_t totient(const T& n) {
+  // factorize n
+  std::unordered_map<T, int> factors;
+  
+  
+}
+
 
 // polynomial ring exponentiation
 polynomial<mpz_class,mpz_class> pow_polyring(const polynomial<mpz_class,mpz_class>& poly, 

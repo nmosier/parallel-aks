@@ -85,3 +85,7 @@ add_executable(bit_container
 add_executable(modular
   modular.cc
 )
+
+add_executable(factorize
+  factorize.cc
+)
